@@ -1,0 +1,188 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>스팸 이메일 분류</title>
+    <style>
+        /* 디자인 유지 (기존 CSS 그대로 사용) */
+        body {
+            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+            background-color: #f7f7f7;
+            color: #333;
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            height: 100vh;
+            margin: 0;
+        }
+
+        .container {
+            background-color: #ffffff;
+            padding: 40px;
+            border-radius: 10px;
+            box-shadow: 0 4px 8px rgba(0, 0, 0, 0.1);
+            text-align: center;
+            width: 100%;
+            max-width: 600px;
+        }
+
+        h1 {
+            font-size: 2.2em;
+            color: #004bac;
+            margin-bottom: 20px;
+        }
+
+        input[type="text"], textarea {
+            width: 100%;
+            padding: 15px;
+            font-size: 1.2em;
+            border: 2px solid #ddd;
+            border-radius: 5px;
+            margin-bottom: 20px;
+            box-sizing: border-box;
+            transition: border-color 0.3s ease;
+        }
+
+        input[type="text"]:focus, textarea:focus {
+            border-color: #004bac;
+            outline: none;
+        }
+
+        button {
+            padding: 15px 30px;
+            font-size: 1.2em;
+            color: #fff;
+            background-color: #004bac;
+            border: none;
+            border-radius: 5px;
+            cursor: pointer;
+            transition: background-color 0.3s ease;
+        }
+
+        button:hover {
+            background-color: #003580;
+        }
+
+        .footer {
+            margin-top: 20px;
+            font-size: 0.9em;
+            color: #888;
+        }
+
+        .result {
+            margin-top: 20px;
+            font-size: 1.2em;
+            color: #333;
+        }
+
+        .category {
+            margin-top: 10px;
+            font-size: 1.2em;
+            color: #004bac;
+        }
+
+        .probability {
+            margin-top: 10px;
+            font-size: 1em;
+            color: #888;
+        }
+        #resultImage {
+            display: none;
+            max-width: 100%;
+            height: auto;
+            margin-top: 20px;
+        }
+
+    </style>
+</head>
+<body>
+    <div class="container">
+        <h1>스팸 이메일 분류 웹사이트</h1>
+        <input type="text" id="emailInput" placeholder="이메일 내용을 입력하세요">
+        <br>
+        <button onclick="classifyEmail()">분류하기</button>
+        <br>
+        <img id="resultImage" src="" alt="결과 이미지는 여기에 표시됩니다" style="display:none;">
+        <div class="result" id="resultText" style="display:none;"></div>
+        <div class="category" id="categoryText" style="display:none;"></div>
+        <div class="probability" id="probabilityText" style="display:none;"></div>
+        
+        <!-- 피드백 입력 -->
+        <textarea id="feedbackInput" placeholder="피드백을 입력하세요" style="display:none;"></textarea>
+        <button id="sendFeedback" onclick="sendFeedback()" style="display:none;">피드백 전송</button>
+
+        <div class="footer">
+            <p>© 2024 스팸 이메일 분류 시스템</p>
+        </div>
+    </div>
+
+    <script>
+        let lastPrediction = ""; // 마지막 예측 저장
+        let lastCategory = ""; // 마지막 카테고리 저장
+
+        async function classifyEmail() {
+            const emailContent = document.getElementById('emailInput').value;
+            const resultImage = document.getElementById('resultImage');
+            const resultText = document.getElementById('resultText');
+            const categoryText = document.getElementById('categoryText');
+            const probabilityText = document.getElementById('probabilityText');
+            const feedbackInput = document.getElementById('feedbackInput');
+            const sendFeedback = document.getElementById('sendFeedback');
+
+            const response = await fetch('/classify', {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify({ email_text: emailContent })
+            });
+
+            const data = await response.json();
+
+            if (data.result === "스팸") {
+                resultImage.src = "static/스팸.jpg";
+                resultText.innerText = "이 이메일은 스팸입니다.";
+            } else {
+                resultImage.src = "static/산정상.jpg";
+                resultText.innerText = "이 이메일은 정상입니다.";
+            }
+
+            resultImage.style.display = "block";
+            resultText.style.display = "block";
+            categoryText.innerText = `카테고리: ${data.type}`;
+            categoryText.style.display = "block";
+            probabilityText.innerText = `스팸 확률: ${(data.spam_prob * 100).toFixed(2)}%, 정상 확률: ${(data.normal_prob * 100).toFixed(2)}%`;
+            probabilityText.style.display = "block";
+
+            // 피드백 입력 표시
+            feedbackInput.style.display = "block";
+            sendFeedback.style.display = "block";
+
+            lastPrediction = data.result;
+            lastCategory = data.type;
+        }
+
+        async function sendFeedback() {
+            const feedback = document.getElementById('feedbackInput').value;
+
+            if (!feedback || !lastPrediction || !lastCategory) {
+                alert('피드백을 입력해주세요!');
+                return;
+            }
+
+            const response = await fetch('/feedback', {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify({
+                    email_content: document.getElementById('emailInput').value,
+                    prediction: lastPrediction,
+                    category: lastCategory,
+                    user_feedback: feedback
+                })
+            });
+
+            const data = await response.json();
+            alert(data.message);
+        }
+    </script>
+</body>
+</html>

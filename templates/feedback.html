@@ -1,0 +1,45 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>피드백 조회</title>
+</head>
+<body>
+    <h1>피드백 목록</h1>
+    <table id="feedbackTable">
+        <thead>
+            <tr>
+                <th>이메일 내용</th>
+                <th>예측 결과</th>
+                <th>카테고리</th> <!-- 카테고리 열 추가 -->
+                <th>피드백</th>
+            </tr>
+        </thead>
+        <tbody>
+            <!-- 피드백 데이터가 여기에 표시됩니다 -->
+        </tbody>
+    </table>
+
+    <script>
+        async function loadFeedback() {
+        const response = await fetch('http://127.0.0.1:5000/get_feedback'); // 서버 URL
+        const feedbackList = await response.json();
+
+        const feedbackTable = document.getElementById('feedbackTable').getElementsByTagName('tbody')[0];
+        feedbackTable.innerHTML = ''; // 기존 내용 제거
+
+        feedbackList.forEach(feedback => {
+            const row = feedbackTable.insertRow();
+            row.insertCell(0).textContent = feedback.email_content;       // 이메일 내용
+            row.insertCell(1).textContent = feedback.prediction;          // 예측 결과
+            row.insertCell(2).textContent = feedback.category;           // 카테고리
+            row.insertCell(3).textContent = feedback.user_feedback;      // 피드백
+        });
+    }
+
+    loadFeedback();
+
+    </script>
+</body>
+</html>
